@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Text, Button } from '@chakra-ui/react';
+import { Box, Text, Button, Flex } from '@chakra-ui/react';
 
 const Index = () => {
   const [playerPosition, setPlayerPosition] = useState({ x: 0, y: 0 });
   const [obstacles, setObstacles] = useState([]);
   const [gameOver, setGameOver] = useState(false);
   const [gameWon, setGameWon] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const gridSize = 10;
   const goalPosition = { x: gridSize - 1, y: gridSize - 1 };
@@ -50,6 +51,36 @@ const Index = () => {
     generateObstacles();
   }, []);
 
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    return () => window.removeEventListener('resize', checkIfMobile);
+  }, []);
+
+  const handleButtonPress = (direction) => {
+    if (gameOver || gameWon) return;
+
+    let newPosition = { ...playerPosition };
+    if (direction === 'up') newPosition.y = Math.max(0, newPosition.y - 1);
+    if (direction === 'down') newPosition.y = Math.min(gridSize - 1, newPosition.y + 1);
+    if (direction === 'left') newPosition.x = Math.max(0, newPosition.x - 1);
+    if (direction === 'right') newPosition.x = Math.min(gridSize - 1, newPosition.x + 1);
+
+    setPlayerPosition(newPosition);
+
+    if (newPosition.x === goalPosition.x && newPosition.y === goalPosition.y) {
+      setGameWon(true);
+    }
+
+    if (obstacles.some(obstacle => obstacle.x === newPosition.x && obstacle.y === newPosition.y)) {
+      setGameOver(true);
+    }
+  };
+
   const resetGame = () => {
     setPlayerPosition({ x: 0, y: 0 });
     setGameOver(false);
@@ -80,6 +111,16 @@ const Index = () => {
       {gameOver && <Text fontSize="xl" color="red.500" mt={4}>Game Over!</Text>}
       {gameWon && <Text fontSize="xl" color="green.500" mt={4}>You Win!</Text>}
       {(gameOver || gameWon) && <Button mt={4} onClick={resetGame}>Restart Game</Button>}
+      {isMobile && (
+        <Flex mt={4} direction="column" alignItems="center">
+          <Button onClick={() => handleButtonPress('up')} mb={2}>Up</Button>
+          <Flex>
+            <Button onClick={() => handleButtonPress('left')} mr={2}>Left</Button>
+            <Button onClick={() => handleButtonPress('down')} mr={2}>Down</Button>
+            <Button onClick={() => handleButtonPress('right')}>Right</Button>
+          </Flex>
+        </Flex>
+      )}
     </Box>
   );
 };
